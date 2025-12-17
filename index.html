@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>US Driving Test Prep</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; overflow-x: hidden; }
+    body { 
+      font-family: system-ui, -apple-system, sans-serif;
+      height: 100%; overflow-x: hidden;
+      overscroll-behavior-y: none;
+      -webkit-overflow-scrolling: touch;
+      -webkit-tap-highlight-color: transparent;
+      background: linear-gradient(135deg, #1a365d 0%, #2d5a87 100%);
+    }
+    #root { min-height: 100%; }
+    .progress-ring { transform: rotate(-90deg); }
+    .screen { min-height: 100vh; min-height: 100dvh; }
+    button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; cursor: pointer; }
+    .loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; color: white; text-align: center; }
+    .loading-icon { font-size: 48px; margin-bottom: 16px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .error-box { background: #FEE2E2; border: 2px solid #EF4444; border-radius: 12px; padding: 20px; margin: 20px; color: #991B1B; }
+    .home-screen { padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); }
+    .home-header { text-align: center; padding: 30px 0; }
+    .home-icon { font-size: 56px; margin-bottom: 12px; }
+    .home-title { color: white; font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .home-subtitle { color: rgba(255,255,255,0.8); font-size: 16px; }
+    .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 16px; }
+    .card-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #1a365d; }
+    .card-desc { color: #64748B; font-size: 14px; margin-bottom: 16px; }
+    .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; }
+    .btn-green { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
+    .footer-text { text-align: center; margin-top: 20px; color: rgba(255,255,255,0.6); font-size: 13px; }
+    .header-bar { background: linear-gradient(135deg, #1a365d 0%, #2d5a87 100%); padding: 16px 20px; padding-top: max(16px, env(safe-area-inset-top)); position: sticky; top: 0; z-index: 10; }
+    .header-row { display: flex; align-items: center; gap: 12px; }
+    .btn-back { background: rgba(255,255,255,0.2); border: none; border-radius: 10px; padding: 10px 14px; color: white; font-size: 16px; }
+    .header-title { color: white; font-size: 20px; font-weight: 600; }
+    .states-grid { padding: 16px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .state-btn { padding: 12px 8px; background: white; color: #1a365d; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .state-btn.has-progress { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; }
+    .categories-list { padding: 16px; }
+    .category-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .category-icon { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .category-info { flex: 1; }
+    .category-title { font-weight: 600; color: #1a365d; font-size: 16px; }
+    .category-desc { color: #64748B; font-size: 13px; margin-top: 2px; }
+    .category-arrow { color: #94A3B8; font-size: 24px; }
+    .quiz-header { background: linear-gradient(135deg, #1a365d 0%, #2d5a87 100%); padding: 16px 20px; padding-top: max(16px, env(safe-area-inset-top)); }
+    .quiz-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .btn-exit { background: rgba(255,255,255,0.2); border: none; border-radius: 8px; padding: 8px 12px; color: white; font-size: 14px; }
+    .quiz-progress-text { color: white; font-weight: 600; }
+    .quiz-score { color: white; font-weight: 600; }
+    .progress-bar-bg { background: rgba(255,255,255,0.2); border-radius: 4px; height: 6px; overflow: hidden; }
+    .progress-bar-fill { background: #10B981; height: 100%; transition: width 0.3s; }
+    .quiz-content { flex: 1; padding: 20px; overflow-y: auto; }
+    .question-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .question-tags { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .tag { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .question-text { font-size: 18px; font-weight: 600; color: #1a365d; line-height: 1.5; }
+    .options-list { display: flex; flex-direction: column; gap: 10px; }
+    .option-btn { padding: 16px; background: white; border: 2px solid #E2E8F0; border-radius: 12px; text-align: left; font-size: 15px; color: #1a365d; transition: all 0.2s; }
+    .option-btn:disabled { cursor: default; }
+    .option-btn.correct { background: #DCFCE7; border-color: #22C55E; }
+    .option-btn.incorrect { background: #FEE2E2; border-color: #EF4444; }
+    .option-letter { font-weight: 600; margin-right: 10px; opacity: 0.5; }
+    .explanation-box { background: #F0F9FF; border: 2px solid #3B82F6; border-radius: 12px; padding: 16px; margin-top: 16px; }
+    .explanation-title { font-weight: 600; color: #1a365d; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .explanation-text { color: #475569; font-size: 14px; line-height: 1.6; }
+    .quiz-footer { padding: 16px 20px; padding-bottom: max(16px, env(safe-area-inset-bottom)); background: white; border-top: 1px solid #E2E8F0; }
+    .btn-next { width: 100%; padding: 16px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; }
+    .results-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+    .results-screen.passed { background: linear-gradient(135deg, #059669 0%, #10B981 100%); }
+    .results-screen.failed { background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%); }
+    .results-icon { font-size: 80px; margin-bottom: 20px; }
+    .results-title { color: white; font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+    .results-subtitle { color: rgba(255,255,255,0.9); font-size: 18px; margin-bottom: 30px; }
+    .results-card { background: white; border-radius: 20px; padding: 30px; margin-bottom: 30px; width: 100%; max-width: 300px; }
+    .results-percent { font-size: 64px; font-weight: 700; }
+    .results-percent.passed { color: #059669; }
+    .results-percent.failed { color: #DC2626; }
+    .results-note { color: #64748B; margin-top: 8px; }
+    .results-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn-retry { padding: 14px 24px; background: white; color: #1a365d; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; }
+    .btn-menu { padding: 14px 24px; background: rgba(255,255,255,0.2); color: white; border: 2px solid white; border-radius: 12px; font-size: 16px; font-weight: 600; }
+    .progress-ring-container { text-align: center; }
+    .progress-ring-label { font-size: 11px; color: #64748B; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div class="loading">
+      <div>
+        <div class="loading-icon">🚗</div>
+        <div>Loading questions...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script>
+    const e = React.createElement;
+
+    const CATEGORIES = [
+      { id: 'general', title: 'Signs & Rules', icon: '🚦', color: '#3B82F6', desc: 'Traffic signs, signals, and road rules' },
+      { id: 'speedLimits', title: 'Speed Limits', icon: '⚡', color: '#10B981', desc: 'Speed zones, points, and penalties' },
+      { id: 'duiBac', title: 'DUI/BAC Laws', icon: '🚫', color: '#EF4444', desc: 'Alcohol limits and impaired driving' },
+      { id: 'gdlLicensing', title: 'Licensing', icon: '📋', color: '#8B5CF6', desc: 'Permit ages, restrictions, and requirements' },
+      { id: 'insurance', title: 'Insurance', icon: '🛡️', color: '#F59E0B', desc: 'Coverage minimums and requirements' },
+      { id: 'seatbeltPhone', title: 'Belt & Phone', icon: '📱', color: '#06B6D4', desc: 'Seatbelt and phone laws' },
+      { id: 'pointsPenalties', title: 'Points', icon: '⚠️', color: '#F97316', desc: 'Point systems and penalties' },
+      { id: 'stateUnique', title: 'State Laws', icon: '📍', color: '#EC4899', desc: 'State-specific regulations' },
+    ];
+
+    const STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
+
+    const STATE_NAMES = {AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming'};
+
+    function ProgressRing(props) {
+      const progress = props.progress;
+      const size = props.size || 44;
+      const strokeWidth = props.strokeWidth || 4;
+      const color = props.color;
+      const radius = (size - strokeWidth) / 2;
+      const circumference = radius * 2 * Math.PI;
+      const offset = circumference - (progress / 100) * circumference;
+      return e('svg', { width: size, height: size, className: 'progress-ring' },
+        e('circle', { stroke: '#E2E8F0', fill: 'transparent', strokeWidth: strokeWidth, r: radius, cx: size/2, cy: size/2 }),
+        e('circle', { stroke: color, fill: 'transparent', strokeWidth: strokeWidth, strokeLinecap: 'round', r: radius, cx: size/2, cy: size/2, style: { strokeDasharray: circumference, strokeDashoffset: offset, transition: 'stroke-dashoffset 0.3s' } })
+      );
+    }
+
+    function App() {
+      const [questions, setQuestions] = React.useState(null);
+      const [loading, setLoading] = React.useState(true);
+      const [error, setError] = React.useState(null);
+      const [screen, setScreen] = React.useState('home');
+      const [selectedState, setSelectedState] = React.useState(null);
+      const [selectedCategory, setSelectedCategory] = React.useState(null);
+      const [currentQuestions, setCurrentQuestions] = React.useState([]);
+      const [currentIndex, setCurrentIndex] = React.useState(0);
+      const [selectedAnswer, setSelectedAnswer] = React.useState(null);
+      const [showExplanation, setShowExplanation] = React.useState(false);
+      const [score, setScore] = React.useState(0);
+      const [progress, setProgress] = React.useState({});
+
+      React.useEffect(function() {
+        fetch('questions.json')
+          .then(function(r) { return r.json(); })
+          .then(function(data) { setQuestions(data); setLoading(false); })
+          .catch(function(err) { setError('Failed to load questions: ' + err.message); setLoading(false); });
+        try {
+          var saved = localStorage.getItem('drivingTestProgress');
+          if (saved) setProgress(JSON.parse(saved));
+        } catch(ex) {}
+      }, []);
+
+      function saveProgress(state, category, completed, total, correct) {
+        var key = state + '-' + category;
+        var newProgress = Object.assign({}, progress);
+        newProgress[key] = { completed: completed, total: total, correct: correct, date: Date.now() };
+        setProgress(newProgress);
+        try { localStorage.setItem('drivingTestProgress', JSON.stringify(newProgress)); } catch(ex) {}
+      }
+
+      function startTest(category) {
+        var qs = [];
+        if (category === 'general') {
+          qs = questions.universal.slice().sort(function() { return Math.random() - 0.5; }).slice(0, 20);
+        } else if (selectedState && questions.states[selectedState]) {
+          qs = questions.states[selectedState].filter(function(q) { return q.category === category; });
+          qs = qs.slice().sort(function() { return Math.random() - 0.5; });
+        }
+        if (qs.length === 0) { alert('No questions available for this category'); return; }
+        setCurrentQuestions(qs);
+        setSelectedCategory(category);
+        setCurrentIndex(0);
+        setSelectedAnswer(null);
+        setShowExplanation(false);
+        setScore(0);
+        setScreen('quiz');
+      }
+
+      function handleAnswer(idx) {
+        if (selectedAnswer !== null) return;
+        setSelectedAnswer(idx);
+        var correct = currentQuestions[currentIndex].correct === idx;
+        if (correct) setScore(function(s) { return s + 1; });
+        setShowExplanation(true);
+      }
+
+      function nextQuestion() {
+        if (currentIndex + 1 >= currentQuestions.length) {
+          saveProgress(selectedState || 'ALL', selectedCategory, currentQuestions.length, currentQuestions.length, score);
+          setScreen('results');
+        } else {
+          setCurrentIndex(function(i) { return i + 1; });
+          setSelectedAnswer(null);
+          setShowExplanation(false);
+        }
+      }
+
+      function getProgress(state, category) {
+        var key = state + '-' + category;
+        return progress[key] || null;
+      }
+
+      // LOADING
+      if (loading) {
+        return e('div', { className: 'loading screen' },
+          e('div', null,
+            e('div', { className: 'loading-icon' }, '🚗'),
+            e('div', null, 'Loading questions...')
+          )
+        );
+      }
+
+      // ERROR
+      if (error) {
+        return e('div', { className: 'screen', style: { background: '#1a365d', padding: '20px' } },
+          e('div', { className: 'error-box' },
+            e('div', { style: { fontSize: '32px', marginBottom: '12px' } }, '⚠️'),
+            e('div', { style: { fontWeight: '600', marginBottom: '8px' } }, 'Error Loading Questions'),
+            e('div', null, error),
+            e('div', { style: { marginTop: '12px', fontSize: '14px' } }, 'Make sure questions.json is in the same folder as index.html')
+          )
+        );
+      }
+
+      // HOME
+      if (screen === 'home') {
+        return e('div', { className: 'screen home-screen' },
+          e('div', { className: 'home-header' },
+            e('div', { className: 'home-icon' }, '🚗'),
+            e('h1', { className: 'home-title' }, 'US Driving Test Prep'),
+            e('p', { className: 'home-subtitle' }, 'Master the rules of the road')
+          ),
+          e('div', { className: 'card' },
+            e('h2', { className: 'card-title' }, '📚 Universal Questions'),
+            e('p', { className: 'card-desc' }, '150 questions covering signs, signals, and rules that apply in all states'),
+            e('button', { className: 'btn-primary', onClick: function() { startTest('general'); } }, 'Start Universal Test')
+          ),
+          e('div', { className: 'card' },
+            e('h2', { className: 'card-title' }, '🗺️ State-Specific Tests'),
+            e('p', { className: 'card-desc' }, 'Select your state to practice state-specific laws'),
+            e('button', { className: 'btn-primary btn-green', onClick: function() { setScreen('states'); } }, 'Choose Your State')
+          ),
+          e('div', { className: 'footer-text' }, '2,650 questions • 50 states • 8 categories')
+        );
+      }
+
+      // STATES
+      if (screen === 'states') {
+        return e('div', { className: 'screen', style: { background: '#F1F5F9', minHeight: '100vh' } },
+          e('div', { className: 'header-bar' },
+            e('div', { className: 'header-row' },
+              e('button', { className: 'btn-back', onClick: function() { setScreen('home'); } }, '← Back'),
+              e('h1', { className: 'header-title' }, 'Select Your State')
+            )
+          ),
+          e('div', { className: 'states-grid' },
+            STATES.map(function(st) {
+              var hasProgress = Object.keys(progress).some(function(k) { return k.startsWith(st + '-'); });
+              return e('button', {
+                key: st,
+                className: 'state-btn' + (hasProgress ? ' has-progress' : ''),
+                onClick: function() { setSelectedState(st); setScreen('categories'); }
+              }, st);
+            })
+          )
+        );
+      }
+
+      // CATEGORIES
+      if (screen === 'categories') {
+        return e('div', { className: 'screen', style: { background: '#F1F5F9', minHeight: '100vh' } },
+          e('div', { className: 'header-bar' },
+            e('div', { className: 'header-row', style: { marginBottom: '8px' } },
+              e('button', { className: 'btn-back', onClick: function() { setScreen('states'); } }, '← Back'),
+              e('h1', { className: 'header-title' }, STATE_NAMES[selectedState])
+            ),
+            e('p', { style: { color: 'rgba(255,255,255,0.8)', fontSize: '14px', marginLeft: '60px' } }, '50 state-specific questions')
+          ),
+          e('div', { className: 'categories-list' },
+            CATEGORIES.filter(function(c) { return c.id !== 'general'; }).map(function(cat) {
+              var prog = getProgress(selectedState, cat.id);
+              var pct = prog ? Math.round((prog.correct / prog.total) * 100) : 0;
+              return e('div', {
+                key: cat.id,
+                className: 'category-card',
+                onClick: function() { startTest(cat.id); }
+              },
+                e('div', { className: 'category-icon', style: { background: cat.color + '20' } }, cat.icon),
+                e('div', { className: 'category-info' },
+                  e('div', { className: 'category-title' }, cat.title),
+                  e('div', { className: 'category-desc' }, cat.desc)
+                ),
+                prog ? e('div', { className: 'progress-ring-container' },
+                  e(ProgressRing, { progress: pct, color: cat.color }),
+                  e('div', { className: 'progress-ring-label' }, pct + '%')
+                ) : e('div', { className: 'category-arrow' }, '›')
+              );
+            })
+          )
+        );
+      }
+
+      // QUIZ
+      if (screen === 'quiz') {
+        var q = currentQuestions[currentIndex];
+        var cat = CATEGORIES.find(function(c) { return c.id === selectedCategory; }) || CATEGORIES[0];
+        return e('div', { className: 'screen', style: { background: '#F1F5F9', minHeight: '100vh', display: 'flex', flexDirection: 'column' } },
+          e('div', { className: 'quiz-header' },
+            e('div', { className: 'quiz-top-row' },
+              e('button', { className: 'btn-exit', onClick: function() { setScreen(selectedState ? 'categories' : 'home'); } }, '✕ Exit'),
+              e('div', { className: 'quiz-progress-text' }, 'Question ' + (currentIndex + 1) + ' of ' + currentQuestions.length),
+              e('div', { className: 'quiz-score' }, '🎯 ' + score)
+            ),
+            e('div', { className: 'progress-bar-bg' },
+              e('div', { className: 'progress-bar-fill', style: { width: ((currentIndex + 1) / currentQuestions.length * 100) + '%' } })
+            )
+          ),
+          e('div', { className: 'quiz-content' },
+            e('div', { className: 'question-card' },
+              e('div', { className: 'question-tags' },
+                e('span', { className: 'tag', style: { background: cat.color + '20', color: cat.color } }, cat.title),
+                selectedState && e('span', { className: 'tag', style: { background: '#E2E8F0', color: '#64748B' } }, selectedState)
+              ),
+              e('h2', { className: 'question-text' }, q.question)
+            ),
+            e('div', { className: 'options-list' },
+              q.options.map(function(opt, idx) {
+                var className = 'option-btn';
+                if (selectedAnswer !== null) {
+                  if (idx === q.correct) className += ' correct';
+                  else if (idx === selectedAnswer && idx !== q.correct) className += ' incorrect';
+                }
+                return e('button', {
+                  key: idx,
+                  className: className,
+                  onClick: function() { handleAnswer(idx); },
+                  disabled: selectedAnswer !== null
+                },
+                  e('span', { className: 'option-letter' }, String.fromCharCode(65 + idx) + '.'),
+                  opt
+                );
+              })
+            ),
+            showExplanation && e('div', { className: 'explanation-box' },
+              e('div', { className: 'explanation-title' }, '💡 Explanation'),
+              e('p', { className: 'explanation-text' }, q.explanation)
+            )
+          ),
+          showExplanation && e('div', { className: 'quiz-footer' },
+            e('button', { className: 'btn-next', onClick: nextQuestion },
+              currentIndex + 1 >= currentQuestions.length ? 'See Results' : 'Next Question →'
+            )
+          )
+        );
+      }
+
+      // RESULTS
+      if (screen === 'results') {
+        var pct = Math.round((score / currentQuestions.length) * 100);
+        var passed = pct >= 80;
+        return e('div', { className: 'results-screen screen ' + (passed ? 'passed' : 'failed') },
+          e('div', { className: 'results-icon' }, passed ? '🎉' : '📚'),
+          e('h1', { className: 'results-title' }, passed ? 'Great Job!' : 'Keep Practicing!'),
+          e('p', { className: 'results-subtitle' }, 'You scored ' + score + ' out of ' + currentQuestions.length),
+          e('div', { className: 'results-card' },
+            e('div', { className: 'results-percent ' + (passed ? 'passed' : 'failed') }, pct + '%'),
+            e('div', { className: 'results-note' }, passed ? 'Passing Score!' : '80% needed to pass')
+          ),
+          e('div', { className: 'results-buttons' },
+            e('button', { className: 'btn-retry', onClick: function() { startTest(selectedCategory); } }, 'Try Again'),
+            e('button', { className: 'btn-menu', onClick: function() { setScreen(selectedState ? 'categories' : 'home'); } }, 'Back to Menu')
+          )
+        );
+      }
+
+      return null;
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+  </script>
+</body>
+</html>
