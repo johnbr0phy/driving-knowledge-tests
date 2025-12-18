@@ -54,6 +54,15 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script>
+console.log('Script starting...');
+console.log('React available:', typeof React !== 'undefined');
+console.log('ReactDOM available:', typeof ReactDOM !== 'undefined');
+
+if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
+  document.getElementById('root').innerHTML = '<div style="padding:40px;text-align:center;color:red;"><h2>Error: React failed to load</h2><p>Check your internet connection</p></div>';
+  throw new Error('React not loaded');
+}
+
 var e = React.createElement;
 
 var CATEGORIES = [
@@ -155,10 +164,26 @@ function App() {
   var testDateInput = _s('')[0], setTestDateInput = _s('')[1];
 
   React.useEffect(function() {
+    console.log('Starting fetch...');
     fetch('questions.json')
-      .then(function(r) { return r.json(); })
-      .then(function(data) { setQuestions(data); setLoading(false); })
-      .catch(function(err) { setError('Failed to load: ' + err.message); setLoading(false); });
+      .then(function(r) { 
+        console.log('Fetch response:', r.status);
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' - File not found.');
+        return r.json(); 
+      })
+      .then(function(data) { 
+        console.log('Data loaded:', data.universal ? data.universal.length : 'no universal', 'universal questions');
+        if (!data.universal || !data.states) {
+          throw new Error('Invalid data structure - missing universal or states');
+        }
+        setQuestions(data); 
+        setLoading(false); 
+      })
+      .catch(function(err) { 
+        console.error('Fetch error:', err);
+        setError(err.message); 
+        setLoading(false); 
+      });
     try {
       var saved = localStorage.getItem('drivingMastered');
       var savedStats = localStorage.getItem('drivingStats');
@@ -166,7 +191,7 @@ function App() {
       if (saved) setMastered(JSON.parse(saved));
       if (savedStats) setStats(JSON.parse(savedStats));
       if (savedTestDate) setTestDate(savedTestDate);
-    } catch(ex) {}
+    } catch(ex) { console.error('LocalStorage error:', ex); }
   }, []);
 
   React.useEffect(function() {
@@ -296,6 +321,7 @@ function App() {
 
   // LOADING
   if (loading) {
+    console.log('Rendering loading state, error:', error);
     return e('div', { className: 'screen', style: { background: 'linear-gradient(180deg, #E3F2FD 0%, #E0F7FA 50%, #E8F5E9 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
       e('div', { style: { textAlign: 'center' } },
         e('div', { style: { fontSize: 56, marginBottom: 16, animation: 'pulse 1.5s ease-in-out infinite' } }, '🚗'),
@@ -307,11 +333,18 @@ function App() {
   // ERROR
   if (error) {
     return e('div', { className: 'screen', style: { background: 'linear-gradient(180deg, #E3F2FD 0%, #E0F7FA 50%, #E8F5E9 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 } },
-      e('div', { style: { background: '#fff', border: '2px solid #FFCDD2', borderRadius: 20, padding: 28, textAlign: 'center', maxWidth: 320, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' } },
+      e('div', { style: { background: '#fff', border: '2px solid #FFCDD2', borderRadius: 20, padding: 28, textAlign: 'center', maxWidth: 340, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' } },
         e('div', { style: { fontSize: 48, marginBottom: 16 } }, '⚠️'),
-        e('h2', { style: { color: '#C62828', fontSize: 18, fontWeight: 700, marginBottom: 8 } }, 'Unable to Load'),
-        e('p', { style: { color: '#757575', fontSize: 14, lineHeight: 1.5 } }, error),
-        e('p', { style: { color: '#9E9E9E', fontSize: 13, marginTop: 16 } }, 'Make sure questions.json is in the same folder as this file.')
+        e('h2', { style: { color: '#C62828', fontSize: 18, fontWeight: 700, marginBottom: 12 } }, 'Unable to Load Questions'),
+        e('p', { style: { color: '#757575', fontSize: 14, lineHeight: 1.5, marginBottom: 16 } }, error),
+        e('div', { style: { background: '#FFF3E0', borderRadius: 12, padding: 16, textAlign: 'left' } },
+          e('p', { style: { fontSize: 13, color: '#E65100', fontWeight: 600, marginBottom: 8 } }, '📁 Checklist:'),
+          e('ul', { style: { fontSize: 12, color: '#F57C00', paddingLeft: 20, lineHeight: 1.8 } },
+            e('li', null, 'questions.json is in the SAME folder as index.html'),
+            e('li', null, 'File is named exactly "questions.json" (lowercase)'),
+            e('li', null, 'Both files are committed and pushed to GitHub')
+          )
+        )
       )
     );
   }
@@ -627,7 +660,16 @@ function App() {
   return null;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+try {
+  console.log('Creating React root...');
+  var root = ReactDOM.createRoot(document.getElementById('root'));
+  console.log('Rendering App...');
+  root.render(e(App));
+  console.log('App rendered successfully');
+} catch(err) {
+  console.error('React render error:', err);
+  document.getElementById('root').innerHTML = '<div style="padding:40px;text-align:center;color:red;"><h2>App Error</h2><p>' + err.message + '</p></div>';
+}
   </script>
 </body>
 </html>
