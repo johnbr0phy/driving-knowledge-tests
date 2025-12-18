@@ -33,7 +33,6 @@
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
     @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(-20px) rotate(360deg); } }
     .fade-in { animation: fadeIn 0.3s ease-out forwards; }
     .slide-up { animation: slideUp 0.4s ease-out forwards; }
     .pop-in { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
@@ -47,22 +46,13 @@
     <div style="min-height:100vh;background:linear-gradient(180deg,#E3F2FD 0%,#E0F7FA 50%,#E8F5E9 100%);display:flex;align-items:center;justify-content:center">
       <div style="text-align:center">
         <div style="font-size:56px;margin-bottom:16px;animation:pulse 1.5s ease-in-out infinite">🚗</div>
-        <div style="color:#546E7A;font-weight:500">Loading your practice tests...</div>
+        <div style="color:#546E7A;font-weight:500">Loading...</div>
       </div>
     </div>
   </div>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script>
-console.log('Script starting...');
-console.log('React available:', typeof React !== 'undefined');
-console.log('ReactDOM available:', typeof ReactDOM !== 'undefined');
-
-if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
-  document.getElementById('root').innerHTML = '<div style="padding:40px;text-align:center;color:red;"><h2>Error: React failed to load</h2><p>Check your internet connection</p></div>';
-  throw new Error('React not loaded');
-}
-
 var e = React.createElement;
 
 var CATEGORIES = [
@@ -164,23 +154,16 @@ function App() {
   var testDateInput = _s('')[0], setTestDateInput = _s('')[1];
 
   React.useEffect(function() {
-    console.log('Starting fetch...');
     fetch('questions.json')
       .then(function(r) { 
-        console.log('Fetch response:', r.status);
-        if (!r.ok) throw new Error('HTTP ' + r.status + ' - File not found.');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json(); 
       })
       .then(function(data) { 
-        console.log('Data loaded:', data.universal ? data.universal.length : 'no universal', 'universal questions');
-        if (!data.universal || !data.states) {
-          throw new Error('Invalid data structure - missing universal or states');
-        }
         setQuestions(data); 
         setLoading(false); 
       })
       .catch(function(err) { 
-        console.error('Fetch error:', err);
         setError(err.message); 
         setLoading(false); 
       });
@@ -191,7 +174,7 @@ function App() {
       if (saved) setMastered(JSON.parse(saved));
       if (savedStats) setStats(JSON.parse(savedStats));
       if (savedTestDate) setTestDate(savedTestDate);
-    } catch(ex) { console.error('LocalStorage error:', ex); }
+    } catch(ex) {}
   }, []);
 
   React.useEffect(function() {
@@ -321,7 +304,6 @@ function App() {
 
   // LOADING
   if (loading) {
-    console.log('Rendering loading state, error:', error);
     return e('div', { className: 'screen', style: { background: 'linear-gradient(180deg, #E3F2FD 0%, #E0F7FA 50%, #E8F5E9 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
       e('div', { style: { textAlign: 'center' } },
         e('div', { style: { fontSize: 56, marginBottom: 16, animation: 'pulse 1.5s ease-in-out infinite' } }, '🚗'),
@@ -341,8 +323,8 @@ function App() {
           e('p', { style: { fontSize: 13, color: '#E65100', fontWeight: 600, marginBottom: 8 } }, '📁 Checklist:'),
           e('ul', { style: { fontSize: 12, color: '#F57C00', paddingLeft: 20, lineHeight: 1.8 } },
             e('li', null, 'questions.json is in the SAME folder as index.html'),
-            e('li', null, 'File is named exactly "questions.json" (lowercase)'),
-            e('li', null, 'Both files are committed and pushed to GitHub')
+            e('li', null, 'File is named exactly "questions.json"'),
+            e('li', null, 'Try hard refresh: Ctrl+Shift+R')
           )
         )
       )
@@ -354,7 +336,7 @@ function App() {
     return e('div', { className: 'screen fade-in', style: { background: 'linear-gradient(180deg, #E3F2FD 0%, #E0F7FA 50%, #E8F5E9 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 } },
       e('span', { style: { fontSize: 56, marginBottom: 20 } }, '📅'),
       e('h2', { style: { fontSize: 22, fontWeight: 700, color: '#1A237E', marginBottom: 8 } }, 'When is your driving test?'),
-      e('p', { style: { fontSize: 14, color: '#607D8B', marginBottom: 28, textAlign: 'center', maxWidth: 280, lineHeight: 1.5 } }, "We'll show you a countdown to help you stay on track with your preparation."),
+      e('p', { style: { fontSize: 14, color: '#607D8B', marginBottom: 28, textAlign: 'center', maxWidth: 280, lineHeight: 1.5 } }, "We'll show you a countdown to help you stay on track."),
       e('input', { type: 'date', value: testDateInput, onChange: function(ev) { setTestDateInput(ev.target.value); },
         style: { padding: '16px 20px', fontSize: 17, borderRadius: 14, border: '2px solid #E0E0E0', marginBottom: 20, width: '100%', maxWidth: 280, textAlign: 'center', fontFamily: 'inherit' } }),
       e('div', { style: { display: 'flex', gap: 12, width: '100%', maxWidth: 280 } },
@@ -375,7 +357,6 @@ function App() {
     var universalComplete = universalRemaining === 0 && universalT > 0;
     
     return e('div', { className: 'screen fade-in', style: { background: 'linear-gradient(180deg, #E3F2FD 0%, #E0F7FA 50%, #E8F5E9 100%)', paddingBottom: 32 } },
-      // Header
       e('div', { style: { textAlign: 'center', padding: '36px 20px 28px' } },
         e('div', { style: { fontSize: 64, marginBottom: 12 } }, '🚗'),
         e('h1', { style: { fontSize: 26, fontWeight: 800, color: '#1A237E', marginBottom: 6 } }, 'US Driving Test Prep'),
@@ -383,14 +364,12 @@ function App() {
       ),
       
       e('div', { style: { padding: '0 16px' } },
-        // Test Date
         testDate ? e(TestDateCountdown, { testDate: testDate, onEdit: function() { setTestDateInput(testDate); setShowTestDateInput(true); } }) :
           e('button', { onClick: function() { setShowTestDateInput(true); }, style: { width: '100%', padding: 16, background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))', border: '2px dashed #90CAF9', borderRadius: 16, marginBottom: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 } },
             e('span', { style: { fontSize: 20 } }, '📅'),
             e('span', { style: { fontSize: 14, fontWeight: 600, color: '#1976D2' } }, 'Add your test date')
           ),
         
-        // Overall Progress
         e('div', { style: { background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' } },
           e('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
             e('div', null,
@@ -408,7 +387,6 @@ function App() {
           )
         ),
         
-        // Universal Questions
         e('h2', { style: { fontSize: 14, fontWeight: 700, color: '#455A64', marginBottom: 12, marginTop: 8, textTransform: 'uppercase', letterSpacing: '0.5px' } }, '📚 Universal Questions'),
         e('div', { style: { background: '#fff', borderRadius: 18, marginBottom: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden' } },
           e('button', { onClick: function() { startTest('general'); }, style: { width: '100%', padding: '16px 18px', border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 14 } },
@@ -436,7 +414,6 @@ function App() {
           )
         ),
         
-        // State-Specific
         e('h2', { style: { fontSize: 14, fontWeight: 700, color: '#455A64', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' } }, '🗺️ State-Specific Tests'),
         e('button', { onClick: function() { setScreen('states'); }, style: { width: '100%', padding: 20, background: 'linear-gradient(135deg, #1976D2 0%, #1565C0 100%)', border: 'none', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, boxShadow: '0 4px 20px rgba(25,118,210,0.3)' } },
           e('span', { style: { fontSize: 28 } }, '🗺️'),
@@ -447,7 +424,6 @@ function App() {
           e('span', { style: { marginLeft: 'auto', color: 'rgba(255,255,255,0.8)', fontSize: 20 } }, '→')
         ),
         
-        // Footer
         e('p', { style: { textAlign: 'center', padding: '24px 0 8px', color: '#90A4AE', fontSize: 13 } }, '2,650 questions • 50 states • 8 categories')
       )
     );
@@ -461,7 +437,7 @@ function App() {
           e('button', { onClick: function() { setScreen('home'); }, style: { background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 12, width: 44, height: 44, fontSize: 20, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '←'),
           e('div', { style: { flex: 1 } },
             e('h1', { style: { color: '#fff', fontSize: 20, fontWeight: 700 } }, 'Select Your State'),
-            e('p', { style: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 } }, 'Choose a state to practice its specific laws')
+            e('p', { style: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 } }, 'Choose a state to practice its laws')
           ),
           e('span', { style: { fontSize: 28 } }, '🗺️')
         )
@@ -498,11 +474,11 @@ function App() {
           e('button', { onClick: function() { setScreen('states'); }, style: { background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 12, width: 44, height: 44, fontSize: 20, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '←'),
           e('div', { style: { flex: 1 } },
             e('h1', { style: { color: '#fff', fontSize: 20, fontWeight: 700 } }, STATE_NAMES[selectedState]),
-            e('p', { style: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 } }, stateM + '/' + stateT + ' mastered • ' + statePct + '% complete')
+            e('p', { style: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 } }, stateM + '/' + stateT + ' mastered • ' + statePct + '%')
           ),
           e('div', { style: { position: 'relative', width: 52, height: 52 } },
             e(ProgressRing, { progress: statePct, size: 52, strokeWidth: 5, color: '#4CAF50' }),
-            e('div', { style: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 20, color: statePct === 100 ? '#fff' : '#fff' } }, statePct === 100 ? '✓' : '🎯')
+            e('div', { style: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 20, color: '#fff' } }, statePct === 100 ? '✓' : '🎯')
           )
         )
       ),
@@ -557,10 +533,9 @@ function App() {
     var totalCt = getTotalQuestions(stateCode, selectedCategory);
     
     return e('div', { className: 'screen', style: { background: 'linear-gradient(180deg, #E3F2FD 0%, #E0F7FA 50%, #E8F5E9 100%)', display: 'flex', flexDirection: 'column', minHeight: '100vh' } },
-      // Header
       e('div', { style: { background: 'linear-gradient(135deg, ' + cat.color + ' 0%, ' + cat.color + 'DD 100%)', padding: '14px 16px 18px', paddingTop: 'max(14px, env(safe-area-inset-top))', borderRadius: '0 0 24px 24px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' } },
         e('div', { style: { display: 'flex', alignItems: 'center', gap: 12 } },
-          e('button', { onClick: function() { if(confirm('Exit quiz? Your progress will be lost.')) setScreen(selectedState ? 'categories' : 'home'); }, style: { background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 10, width: 40, height: 40, fontSize: 18, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '←'),
+          e('button', { onClick: function() { if(confirm('Exit quiz? Progress will be lost.')) setScreen(selectedState ? 'categories' : 'home'); }, style: { background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 10, width: 40, height: 40, fontSize: 18, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' } }, '←'),
           e('div', { style: { flex: 1, height: 8, background: 'rgba(255,255,255,0.3)', borderRadius: 8, overflow: 'hidden' } },
             e('div', { style: { height: '100%', background: '#fff', borderRadius: 8, width: ((currentIndex + 1) / currentQuestions.length * 100) + '%', transition: 'width 0.3s ease-out' } })
           ),
@@ -568,11 +543,10 @@ function App() {
           e('span', { style: { background: 'rgba(255,255,255,0.95)', color: '#1A237E', padding: '7px 14px', borderRadius: 12, fontSize: 14, fontWeight: 700, marginLeft: 4 } }, score + ' ✓')
         ),
         e('div', { style: { marginTop: 10, fontSize: 12, color: 'rgba(255,255,255,0.8)', textAlign: 'center', fontWeight: 500 } },
-          (masteredCt + sessionMastered.length) + '/' + totalCt + ' mastered in this topic'
+          (masteredCt + sessionMastered.length) + '/' + totalCt + ' mastered'
         )
       ),
       
-      // Question
       e('div', { className: 'slide-up', key: currentIndex, style: { flex: 1, padding: '24px 16px 20px', display: 'flex', flexDirection: 'column' } },
         e('div', { style: { display: 'flex', gap: 8, marginBottom: 16 } },
           e('span', { style: { background: cat.color + '18', color: cat.color, padding: '5px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600 } }, cat.title),
@@ -642,7 +616,7 @@ function App() {
         e('div', { style: { height: 10, background: '#E8E8E8', borderRadius: 10, overflow: 'hidden' } },
           e('div', { style: { height: '100%', background: 'linear-gradient(90deg, ' + cat.color + ', ' + cat.color + 'BB)', borderRadius: 10, width: (masteredCt / totalCt * 100) + '%', transition: 'width 0.6s ease-out' } })
         ),
-        sessionMastered.length > 0 && e('p', { style: { fontSize: 13, color: '#4CAF50', marginTop: 12, fontWeight: 600 } }, '+' + sessionMastered.length + ' newly mastered this session!')
+        sessionMastered.length > 0 && e('p', { style: { fontSize: 13, color: '#4CAF50', marginTop: 12, fontWeight: 600 } }, '+' + sessionMastered.length + ' newly mastered!')
       ),
       
       e('p', { style: { fontSize: 16, color: '#78909C', marginBottom: 28 } },
@@ -660,16 +634,7 @@ function App() {
   return null;
 }
 
-try {
-  console.log('Creating React root...');
-  var root = ReactDOM.createRoot(document.getElementById('root'));
-  console.log('Rendering App...');
-  root.render(e(App));
-  console.log('App rendered successfully');
-} catch(err) {
-  console.error('React render error:', err);
-  document.getElementById('root').innerHTML = '<div style="padding:40px;text-align:center;color:red;"><h2>App Error</h2><p>' + err.message + '</p></div>';
-}
+ReactDOM.createRoot(document.getElementById('root')).render(e(App));
   </script>
 </body>
 </html>
